@@ -1,0 +1,19 @@
+{
+  "name": "myawardtracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "My Award Tracker — activity & award tracking SaaS",
+  "workspaces": [
+    "shared",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w frontend",
+    "build": "npm run build -w frontend",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w frontend",
+    "lint": "npm run lint -w frontend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

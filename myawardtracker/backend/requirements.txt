@@ -1,0 +1,4 @@
+# Runtime dependencies bundled into the Lambda deployment package.
+# boto3 is provided by the Lambda runtime and is intentionally not pinned here.
+aws-lambda-powertools[parser]>=3.4,<4.0
+stripe>=11.0,<13.0

@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# All Stripe values are optional for the first apply — they default to
+# "REPLACE_ME" placeholders and can be updated in SSM later.
+
+project     = "myawardtracker"
+environment = "prod"
+aws_region  = "us-east-1"
+domain_name = "myawardtracker.com"
+
+# Stripe (test mode is fine to start)
+# stripe_secret_key         = "sk_test_..."
+# stripe_webhook_secret     = "whsec_..."
+# stripe_price_individual   = "price_..."
+# stripe_price_family       = "price_..."
+# stripe_price_small_group  = "price_..."
+# stripe_price_medium_group = "price_..."
