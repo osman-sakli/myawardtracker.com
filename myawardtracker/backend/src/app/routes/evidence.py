@@ -6,7 +6,7 @@ the metadata record in DynamoDB.
 
 from __future__ import annotations
 
-from aws_lambda_powertools.event_handler import Router
+from aws_lambda_powertools.event_handler.api_gateway import Router
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError, NotFoundError
 
 from .. import db, entitlement, storage
