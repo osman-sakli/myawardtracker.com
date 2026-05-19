@@ -1,0 +1,122 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two production deploys at once; never cancel one mid-apply.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: myawardtracker
+
+jobs:
+  # A secret must never reach production — block the deploy if one is found.
+  guard:
+    name: Security gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run bandit
+        run: |
+          python -m pip install 'bandit[toml]'
+          bandit -r backend/src -ll
+
+  deploy:
+    name: Provision + deploy
+    needs: guard
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: myawardtracker/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build backend Lambda package
+        run: bash backend/build.sh
+
+      - name: Terraform init
+        run: |
+          terraform -chdir=infra init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=prod/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="use_lockfile=true"
+
+      - name: Terraform apply
+        run: terraform -chdir=infra apply -auto-approve -input=false
+
+      - name: Capture Terraform outputs
+        id: tf
+        run: |
+          cd infra
+          {
+            echo "api_url=$(terraform output -raw api_url)"
+            echo "site_url=$(terraform output -raw site_url)"
+            echo "user_pool_id=$(terraform output -raw cognito_user_pool_id)"
+            echo "client_id=$(terraform output -raw cognito_client_id)"
+            echo "bucket=$(terraform output -raw frontend_bucket)"
+            echo "distribution=$(terraform output -raw cloudfront_distribution_id)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ steps.tf.outputs.api_url }}
+          NEXT_PUBLIC_AWS_REGION: ${{ vars.AWS_REGION }}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ steps.tf.outputs.user_pool_id }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ steps.tf.outputs.client_id }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.tf.outputs.site_url }}
+        run: npm run build
+
+      - name: Upload static site to S3
+        run: |
+          aws s3 sync frontend/out "s3://${{ steps.tf.outputs.bucket }}" \
+            --delete --no-progress
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.tf.outputs.distribution }}" \
+            --paths "/*"
