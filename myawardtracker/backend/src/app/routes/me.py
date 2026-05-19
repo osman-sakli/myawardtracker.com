@@ -5,7 +5,7 @@ from __future__ import annotations
 from aws_lambda_powertools.event_handler import Router
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
 
-from .. import db
+from .. import db, entitlement
 from ..auth import current_user
 from ..models import UserUpdate
 
@@ -16,7 +16,8 @@ router = Router()
 def get_me() -> dict:
     user = current_user(router.current_event)
     record = db.ensure_user(user.sub, user.email, user.name)
-    return {"user": record, "subscription": db.get_subscription(user.sub)}
+    subscription = entitlement.describe(record, db.get_subscription(user.sub))
+    return {"user": record, "subscription": subscription}
 
 
 @router.patch("/v1/me")

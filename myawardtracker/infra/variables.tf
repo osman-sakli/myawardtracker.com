@@ -35,39 +35,37 @@ variable "lambda_memory_mb" {
 }
 
 variable "stripe_secret_key" {
-  description = "Stripe secret key. Leave as placeholder and update the SSM parameter out-of-band."
+  description = "Stripe live secret key. Leave as placeholder; the real value is written into Secrets Manager out-of-band."
   type        = string
   default     = "REPLACE_ME"
   sensitive   = true
 }
 
 variable "stripe_webhook_secret" {
-  description = "Stripe webhook signing secret."
+  description = "Stripe webhook signing secret. Leave as placeholder; written into Secrets Manager out-of-band."
   type        = string
   default     = "REPLACE_ME"
   sensitive   = true
 }
 
 variable "stripe_price_individual" {
-  description = "Stripe price id for the Individual plan."
+  description = "Stripe price id for the one-time $9.99 Individual purchase."
   type        = string
   default     = "REPLACE_ME"
 }
 
-variable "stripe_price_family" {
-  description = "Stripe price id for the Family plan."
+# ---------------------------------------------------------------------------
+# Cost guardrails
+# ---------------------------------------------------------------------------
+
+variable "alert_email" {
+  description = "Email to receive budget alerts. Leave empty to skip the Budget."
   type        = string
-  default     = "REPLACE_ME"
+  default     = ""
 }
 
-variable "stripe_price_small_group" {
-  description = "Stripe price id for the Small Group plan."
-  type        = string
-  default     = "REPLACE_ME"
-}
-
-variable "stripe_price_medium_group" {
-  description = "Stripe price id for the Medium Group plan."
-  type        = string
-  default     = "REPLACE_ME"
+variable "budget_monthly_usd" {
+  description = "Monthly cost cap (USD) for the budget alarm."
+  type        = number
+  default     = 20
 }

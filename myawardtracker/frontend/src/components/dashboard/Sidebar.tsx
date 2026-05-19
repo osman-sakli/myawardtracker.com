@@ -48,16 +48,16 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="m-3 rounded-xl border border-border bg-bg-soft p-4">
-        <p className="text-sm font-medium text-content">Need more profiles?</p>
+        <p className="text-sm font-medium text-content">Account access</p>
         <p className="mt-1 text-xs text-content-muted">
-          Upgrade your plan to track a whole family or group.
+          Check your trial status or renew your year of access.
         </p>
         <Link
           href="/dashboard/billing"
           onClick={onNavigate}
           className="mt-3 inline-block text-xs font-semibold text-brand-soft hover:text-brand"
         >
-          View plans →
+          View billing →
         </Link>
       </div>
     </div>

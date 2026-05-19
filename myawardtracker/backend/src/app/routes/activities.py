@@ -5,7 +5,7 @@ from __future__ import annotations
 from aws_lambda_powertools.event_handler import Router
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError, NotFoundError
 
-from .. import db, storage
+from .. import db, entitlement, storage
 from ..auth import current_user
 from ..models import ActivityCreate, ActivityUpdate
 
@@ -26,6 +26,8 @@ def list_activities() -> dict:
 @router.post("/v1/activities")
 def create_activity() -> tuple[dict, int]:
     user = current_user(router.current_event)
+    record = db.ensure_user(user.sub, user.email, user.name)
+    entitlement.require_access(record, db.get_subscription(user.sub))
     data = ActivityCreate(**(router.current_event.json_body or {}))
     if not db.get_profile(user.sub, data.profileId):
         raise BadRequestError("profileId does not reference an existing profile")

@@ -311,8 +311,8 @@ export default function FeaturesPage() {
                   See every feature in action.
                 </h2>
                 <p className="mx-auto mt-4 max-w-lg text-content-muted">
-                  Create a free account and start logging activities today — or
-                  compare plans to find the right fit.
+                  Create a free account and start logging activities today —
+                  free for 15 days, no card required.
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
                   <Link
@@ -326,7 +326,7 @@ export default function FeaturesPage() {
                     href="/pricing"
                     className={buttonClasses('secondary', 'lg')}
                   >
-                    Compare plans
+                    See pricing
                   </Link>
                 </div>
               </div>

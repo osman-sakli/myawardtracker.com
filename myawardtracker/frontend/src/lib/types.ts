@@ -58,11 +58,16 @@ export interface Evidence {
 export interface Subscription {
   userId: string;
   planId: string;
-  status: 'none' | 'trialing' | 'active' | 'past_due' | 'canceled';
+  /** `trialing` during the 15-day free trial, `active` while a one-time
+   *  purchase is still valid, `expired` once both have lapsed. */
+  status: 'trialing' | 'active' | 'expired';
+  /** ISO timestamp the free trial ends. */
+  trialEndsAt?: string;
+  /** ISO timestamp paid access ends — set after a one-time purchase. */
+  paidUntil?: string;
+  /** Whole days left in the current trial or paid period (0 when expired). */
+  daysRemaining: number;
   stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  currentPeriodEnd?: string;
-  cancelAtPeriodEnd: boolean;
   updatedAt: string;
 }
 

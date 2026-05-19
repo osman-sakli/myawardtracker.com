@@ -5,7 +5,7 @@ from __future__ import annotations
 from aws_lambda_powertools.event_handler import Router
 from aws_lambda_powertools.event_handler.exceptions import NotFoundError
 
-from .. import db, storage
+from .. import db, entitlement, storage
 from ..auth import current_user
 from ..models import ProfileCreate, ProfileUpdate
 
@@ -21,6 +21,8 @@ def list_profiles() -> dict:
 @router.post("/v1/profiles")
 def create_profile() -> tuple[dict, int]:
     user = current_user(router.current_event)
+    record = db.ensure_user(user.sub, user.email, user.name)
+    entitlement.require_access(record, db.get_subscription(user.sub))
     data = ProfileCreate(**(router.current_event.json_body or {}))
     profile = db.create_profile(user.sub, data.model_dump())
     db.add_audit(user.sub, "create", "profile", profile["id"])

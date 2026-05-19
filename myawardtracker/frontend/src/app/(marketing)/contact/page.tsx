@@ -24,8 +24,8 @@ const DETAILS = [
   },
   {
     icon: LifeBuoy,
-    title: 'Organizations',
-    body: 'Ask about group and enterprise onboarding',
+    title: 'Getting started',
+    body: 'Questions about the 15-day trial or your account',
   },
 ];
 

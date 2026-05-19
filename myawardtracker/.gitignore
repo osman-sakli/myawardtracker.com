@@ -6,9 +6,16 @@ node_modules/
 # builds
 frontend/.next/
 frontend/out/
+backend/build/
 backend/dist/
 backend/*.zip
 *.tsbuildinfo
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
 
 # env / secrets
 .env

@@ -11,19 +11,13 @@ export type UserRole =
   | 'coordinator'
   | 'enterprise_admin';
 
-export type PlanId =
-  | 'individual'
-  | 'family'
-  | 'small_group'
-  | 'medium_group'
-  | 'enterprise';
+export type PlanId = 'individual';
 
-export type SubscriptionStatus =
-  | 'none'
-  | 'trialing'
-  | 'active'
-  | 'past_due'
-  | 'canceled';
+/**
+ * Access lifecycle: `trialing` during the 15-day free trial, `active` while a
+ * one-time purchase is still valid, `expired` once both have lapsed.
+ */
+export type SubscriptionStatus = 'trialing' | 'active' | 'expired';
 
 /** Lifecycle of a logged activity. */
 export type ActivityStatus =
@@ -128,11 +122,13 @@ export interface Subscription {
   userId: string;
   planId: PlanId;
   status: SubscriptionStatus;
+  /** ISO timestamp the 15-day free trial ends. */
+  trialEndsAt?: string;
+  /** ISO timestamp paid access ends — set after a one-time purchase. */
+  paidUntil?: string;
+  /** Whole days left in the current trial or paid period (0 when expired). */
+  daysRemaining: number;
   stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  /** ISO timestamp when the current period ends. */
-  currentPeriodEnd?: string;
-  cancelAtPeriodEnd: boolean;
   updatedAt: string;
 }
 

@@ -1,4 +1,4 @@
-import { PLANS } from '@myawardtracker/shared';
+import { PLAN_BY_ID } from '@myawardtracker/shared';
 import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -12,31 +12,30 @@ import { Card } from '@/components/ui/Card';
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'Simple, affordable plans for students, families, and organizations. Start individual and scale to a full group whenever you need.',
+    'One simple price. Start with a 15-day free trial, then a single $9.99 payment keeps your account active for a full year.',
 };
 
 const FAQ = [
   {
-    q: 'Can I switch plans later?',
-    a: 'Yes. Upgrade or downgrade at any time from your billing settings — changes take effect immediately and are prorated.',
-  },
-  {
     q: 'Do you offer a free trial?',
-    a: 'You can create an account and explore the dashboard before subscribing. A paid plan unlocks unlimited activity tracking and evidence storage.',
+    a: 'Yes — every new account gets 15 days free with no credit card required. Explore the full dashboard and log real activities before you decide.',
   },
   {
-    q: 'How does billing work?',
-    a: 'Plans are billed monthly through Stripe. You can manage your payment method, view invoices, or cancel anytime from the billing portal.',
+    q: 'How does the payment work?',
+    a: 'It is a one-time $9.99 payment that unlocks 12 months of access. There is no recurring subscription — when the year is up, you simply pay again to renew.',
   },
   {
-    q: 'What happens to my data if I cancel?',
-    a: 'Your records stay safe and remain accessible if you resubscribe. Nothing is deleted automatically.',
+    q: 'Is my card stored?',
+    a: 'No. Payments run through Stripe Checkout in one-time payment mode. Your card is charged once and is not saved or kept on file afterward.',
+  },
+  {
+    q: 'What happens to my data if my access lapses?',
+    a: 'Your records stay safe and remain accessible the moment you renew. Nothing is deleted automatically.',
   },
 ];
 
 export default function PricingPage() {
-  const standardPlans = PLANS.filter((p) => p.id !== 'enterprise');
-  const enterprise = PLANS.find((p) => p.id === 'enterprise');
+  const plan = PLAN_BY_ID['individual'];
 
   return (
     <>
@@ -46,56 +45,53 @@ export default function PricingPage() {
           <Reveal>
             <Eyebrow>Pricing</Eyebrow>
             <h1 className="mx-auto mt-5 max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight text-content sm:text-5xl">
-              Pricing that grows with you
+              One price. One year. No surprises.
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg text-content-muted">
-              Start tracking as an individual student, or manage a whole family
-              or organization. Every plan includes the full toolkit.
+              Try everything free for 15 days. Then a single $9.99 payment keeps
+              your account active for a full year — no subscription, no stored
+              card.
             </p>
           </Reveal>
         </div>
       </section>
 
-      <section className="pb-8">
-        <div className="container-page grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {standardPlans.map((plan, i) => (
-            <Reveal key={plan.id} delay={i * 60}>
-              <Card
-                className={`flex h-full flex-col p-6 ${
-                  plan.highlighted ? 'border-brand/45 shadow-glow' : ''
-                }`}
-              >
+      {plan && (
+        <section className="pb-12">
+          <div className="container-page">
+            <Reveal>
+              <Card className="mx-auto flex max-w-md flex-col border-brand/45 p-8 shadow-glow">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-content">
                     {plan.name}
                   </h2>
-                  {plan.highlighted && (
-                    <Badge tone="brand">
-                      <Sparkles className="h-3 w-3" />
-                      Popular
-                    </Badge>
-                  )}
+                  <Badge tone="brand">
+                    <Sparkles className="h-3 w-3" />
+                    One-time payment
+                  </Badge>
                 </div>
-                <p className="mt-1 text-sm text-content-muted">{plan.tagline}</p>
-                <p className="mt-5">
-                  <span className="text-4xl font-semibold tracking-tight text-content">
+                <p className="mt-1 text-sm text-content-muted">
+                  {plan.tagline}
+                </p>
+                <p className="mt-6">
+                  <span className="text-5xl font-semibold tracking-tight text-content">
                     {plan.priceLabel}
                   </span>
-                  <span className="text-sm text-content-subtle"> /month</span>
                 </p>
-                <p className="mt-1 text-xs font-medium text-brand-soft">
-                  {plan.seats}
+                <p className="mt-1 text-sm font-medium text-brand-soft">
+                  {plan.billingNote}
                 </p>
                 <Link
                   href="/signup"
-                  className={`${buttonClasses(
-                    plan.highlighted ? 'primary' : 'secondary',
-                    'md',
-                  )} mt-5`}
+                  className={`${buttonClasses('primary', 'lg')} mt-6`}
                 >
-                  Get started
+                  Start your 15-day free trial
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-                <ul className="mt-6 space-y-2.5 border-t border-border pt-6">
+                <p className="mt-2 text-center text-xs text-content-subtle">
+                  No credit card required to start.
+                </p>
+                <ul className="mt-7 space-y-2.5 border-t border-border pt-6">
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
@@ -108,49 +104,6 @@ export default function PricingPage() {
                 </ul>
               </Card>
             </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {enterprise && (
-        <section className="py-12">
-          <div className="container-page">
-            <Reveal>
-              <Card className="relative overflow-hidden p-8 sm:p-10">
-                <div className="absolute inset-0 bg-grid-fade" />
-                <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="max-w-xl">
-                    <h2 className="text-2xl font-semibold tracking-tight text-content">
-                      {enterprise.name}
-                    </h2>
-                    <p className="mt-2 text-content-muted">{enterprise.tagline}</p>
-                    <ul className="mt-5 grid gap-2 sm:grid-cols-2">
-                      {enterprise.features.map((feature) => (
-                        <li
-                          key={feature}
-                          className="flex items-start gap-2.5 text-sm text-content-muted"
-                        >
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-soft" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="shrink-0">
-                    <p className="text-3xl font-semibold text-content">
-                      {enterprise.priceLabel}
-                    </p>
-                    <Link
-                      href="/contact"
-                      className={`${buttonClasses('primary', 'lg')} mt-4`}
-                    >
-                      Contact sales
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-              </Card>
-            </Reveal>
           </div>
         </section>
       )}
@@ -161,7 +114,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="FAQ"
               title="Questions, answered"
-              description="Everything you need to know before choosing a plan."
+              description="Everything you need to know before you start."
             />
           </Reveal>
           <div className="mx-auto mt-12 grid max-w-3xl gap-3">

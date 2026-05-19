@@ -2,25 +2,22 @@
 
 Trust comes from the signature check in :func:`stripe_client.construct_event`;
 an event that fails verification is rejected with a 400 before any DB write.
+
+The Individual plan is a one-time purchase, so the only event that matters is
+``checkout.session.completed`` — it grants a fixed window of paid access.
 """
 
 from __future__ import annotations
 
 import base64
-import datetime as dt
 
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from app import db, stripe_client
+from app.constants import PAID_ACCESS_DAYS
 
 logger = Logger(service="myawardtracker-webhook")
-
-
-def _ts_to_iso(ts: int | None) -> str | None:
-    if not ts:
-        return None
-    return dt.datetime.fromtimestamp(ts, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _resolve_user_id(stripe_object: dict) -> str | None:
@@ -37,67 +34,25 @@ def _resolve_user_id(stripe_object: dict) -> str | None:
 
 
 def _handle_checkout_completed(session: dict) -> None:
+    if session.get("payment_status") not in ("paid", "no_payment_required"):
+        logger.info(
+            "checkout completed but unpaid",
+            payment_status=session.get("payment_status"),
+        )
+        return
     user_id = session.get("client_reference_id") or _resolve_user_id(session)
     if not user_id:
         logger.warning("checkout.session.completed without a resolvable user")
         return
-    metadata = session.get("metadata") or {}
-    db.put_subscription(
-        user_id,
-        {
-            "planId": metadata.get("planId", "individual"),
-            "status": "active",
-            "stripeCustomerId": session.get("customer"),
-            "stripeSubscriptionId": session.get("subscription"),
-            "cancelAtPeriodEnd": False,
-        },
+    db.grant_paid_access(
+        user_id, days=PAID_ACCESS_DAYS, stripe_customer_id=session.get("customer")
     )
-    db.add_audit(user_id, "subscription.activated", "subscription", user_id)
-
-
-def _handle_subscription_change(subscription: dict) -> None:
-    user_id = _resolve_user_id(subscription)
-    if not user_id:
-        logger.warning("subscription change without a resolvable user")
-        return
-    metadata = subscription.get("metadata") or {}
-    existing = db.get_subscription(user_id)
-    db.put_subscription(
-        user_id,
-        {
-            "planId": metadata.get("planId") or existing.get("planId", "individual"),
-            "status": subscription.get("status", "active"),
-            "stripeCustomerId": subscription.get("customer"),
-            "stripeSubscriptionId": subscription.get("id"),
-            "cancelAtPeriodEnd": bool(subscription.get("cancel_at_period_end")),
-            "currentPeriodEnd": _ts_to_iso(subscription.get("current_period_end")),
-        },
-    )
-
-
-def _handle_subscription_deleted(subscription: dict) -> None:
-    user_id = _resolve_user_id(subscription)
-    if not user_id:
-        return
-    existing = db.get_subscription(user_id)
-    db.put_subscription(
-        user_id,
-        {
-            "planId": existing.get("planId", "individual"),
-            "status": "canceled",
-            "stripeCustomerId": subscription.get("customer"),
-            "stripeSubscriptionId": subscription.get("id"),
-            "cancelAtPeriodEnd": False,
-        },
-    )
-    db.add_audit(user_id, "subscription.canceled", "subscription", user_id)
+    db.add_audit(user_id, "subscription.purchased", "subscription", user_id)
+    logger.info("granted paid access", user_id=user_id, days=PAID_ACCESS_DAYS)
 
 
 _HANDLERS = {
     "checkout.session.completed": _handle_checkout_completed,
-    "customer.subscription.created": _handle_subscription_change,
-    "customer.subscription.updated": _handle_subscription_change,
-    "customer.subscription.deleted": _handle_subscription_deleted,
 }
 
 

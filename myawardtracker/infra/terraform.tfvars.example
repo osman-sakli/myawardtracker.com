@@ -1,16 +1,17 @@
 # Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
-# All Stripe values are optional for the first apply — they default to
-# "REPLACE_ME" placeholders and can be updated in SSM later.
+# The Stripe secret/webhook values are optional for the first apply — they
+# default to "REPLACE_ME" placeholders and are updated directly in Secrets
+# Manager out-of-band (see README).
 
 project     = "myawardtracker"
 environment = "prod"
 aws_region  = "us-east-1"
 domain_name = "myawardtracker.com"
 
-# Stripe (test mode is fine to start)
-# stripe_secret_key         = "sk_test_..."
-# stripe_webhook_secret     = "whsec_..."
-# stripe_price_individual   = "price_..."
-# stripe_price_family       = "price_..."
-# stripe_price_small_group  = "price_..."
-# stripe_price_medium_group = "price_..."
+# Stripe — only the price id is set here; the secret key and webhook secret
+# are written straight into Secrets Manager, never into tfvars.
+# stripe_price_individual = "price_..."
+
+# Cost guardrail: set alert_email to enable an AWS Budget at this monthly cap.
+# alert_email        = "you@example.com"
+# budget_monthly_usd = 20

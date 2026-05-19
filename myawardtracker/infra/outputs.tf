@@ -44,6 +44,21 @@ output "site_url" {
   value = "https://${local.domain}"
 }
 
+output "stripe_secret_name" {
+  description = "Secrets Manager secret holding the Stripe credentials JSON."
+  value       = aws_secretsmanager_secret.stripe.name
+}
+
+output "report_from_email" {
+  description = "SES sender address for the bi-weekly report email."
+  value       = local.report_from_email
+}
+
+output "webhook_url" {
+  description = "Stripe webhook endpoint to register in the Stripe dashboard."
+  value       = "https://${local.api_domain}/webhooks/stripe"
+}
+
 # Convenience block: paste into frontend/.env.local
 output "frontend_env" {
   description = "Environment values for the frontend build."

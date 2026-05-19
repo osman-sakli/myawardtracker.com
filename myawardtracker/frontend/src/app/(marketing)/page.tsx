@@ -1,12 +1,13 @@
 import {
   ACTIVITY_CATEGORIES,
   AWARD_PROGRAMS,
-  PLANS,
+  PLAN_BY_ID,
 } from '@myawardtracker/shared';
 import {
   ArrowRight,
   BarChart3,
   CalendarCheck,
+  Check,
   CloudUpload,
   FileText,
   ShieldCheck,
@@ -80,6 +81,7 @@ const STEPS = [
 export default function HomePage() {
   const featuredCategories = ACTIVITY_CATEGORIES.slice(0, 8);
   const hourPrograms = AWARD_PROGRAMS.filter((p) => p.goalHours);
+  const pricingPlan = PLAN_BY_ID['individual'];
 
   return (
     <>
@@ -111,7 +113,7 @@ export default function HomePage() {
               </Link>
             </div>
             <p className="mt-5 text-sm text-content-subtle">
-              No credit card to get started · Cancel anytime
+              No credit card to get started · 15-day free trial
             </p>
           </div>
 
@@ -293,41 +295,45 @@ export default function HomePage() {
           <Reveal>
             <SectionHeading
               eyebrow="Pricing"
-              title="Plans for students, families, and groups"
-              description="Start as an individual and scale up to a whole organization whenever you need."
+              title="One price. One year. No surprises."
+              description="Try everything free for 15 days, then a single payment keeps your account active for a full year."
             />
           </Reveal>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {PLANS.filter((p) => p.id !== 'enterprise').map((plan, i) => (
-              <Reveal key={plan.id} delay={i * 60}>
-                <Card
-                  className={`h-full p-6 ${plan.highlighted ? 'border-brand/40 shadow-glow' : ''}`}
-                >
-                  {plan.highlighted && (
-                    <Badge tone="brand" className="mb-3">
-                      <Sparkles className="h-3 w-3" />
-                      Most popular
-                    </Badge>
-                  )}
-                  <h3 className="text-sm font-semibold text-content">
-                    {plan.name}
-                  </h3>
-                  <p className="mt-3">
-                    <span className="text-3xl font-semibold tracking-tight text-content">
-                      {plan.priceLabel}
-                    </span>
-                    {plan.price > 0 && (
-                      <span className="text-sm text-content-subtle"> /mo</span>
-                    )}
-                  </p>
-                  <p className="mt-2 text-xs text-content-muted">{plan.seats}</p>
-                </Card>
-              </Reveal>
-            ))}
-          </div>
+          {pricingPlan && (
+            <div className="mt-12">
+              <Card className="mx-auto flex max-w-md flex-col border-brand/40 p-8 shadow-glow">
+                <Badge tone="brand" className="mb-3 self-start">
+                  <Sparkles className="h-3 w-3" />
+                  One-time payment
+                </Badge>
+                <h3 className="text-base font-semibold text-content">
+                  {pricingPlan.name}
+                </h3>
+                <p className="mt-3">
+                  <span className="text-4xl font-semibold tracking-tight text-content">
+                    {pricingPlan.priceLabel}
+                  </span>
+                </p>
+                <p className="mt-1 text-sm font-medium text-brand-soft">
+                  {pricingPlan.billingNote}
+                </p>
+                <ul className="mt-6 space-y-2 border-t border-border pt-6">
+                  {pricingPlan.features.slice(0, 5).map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm text-content-muted"
+                    >
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-soft" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
+          )}
           <div className="mt-10 text-center">
             <Link href="/pricing" className={buttonClasses('primary', 'md')}>
-              Compare all plans
+              See pricing details
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

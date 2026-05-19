@@ -37,7 +37,11 @@ CATEGORY_LABELS: dict[str, str] = {
 
 ACTIVITY_STATUSES = {"planned", "in_progress", "completed", "verified"}
 
-PLAN_IDS = {"individual", "family", "small_group", "medium_group", "enterprise"}
+PLAN_IDS = {"individual"}
+
+# Access lifecycle.
+FREE_TRIAL_DAYS = 15
+PAID_ACCESS_DAYS = 365
 
 # award program id -> goal hours (None when not hour-based)
 AWARD_PROGRAMS: dict[str, int | None] = {

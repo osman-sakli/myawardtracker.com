@@ -16,7 +16,6 @@ from .constants import (
     ALLOWED_EVIDENCE_TYPES,
     AWARD_PROGRAMS,
     MAX_EVIDENCE_BYTES,
-    PLAN_IDS,
 )
 
 
@@ -153,6 +152,6 @@ class CheckoutRequest(_Base):
     @field_validator("planId")
     @classmethod
     def _plan(cls, v: str) -> str:
-        if v not in PLAN_IDS or v == "enterprise":
+        if v != "individual":
             raise ValueError(f"plan not purchasable online: {v}")
         return v

@@ -1,7 +1,7 @@
 """Thin Stripe wrapper.
 
 The SDK is configured lazily so a cold Lambda that never touches billing does
-not pay the SSM lookup cost.
+not pay the Secrets Manager lookup cost.
 """
 
 from __future__ import annotations
@@ -27,35 +27,31 @@ def create_checkout_session(
     price_id: str,
     success_url: str,
     cancel_url: str,
-    customer_id: str | None,
     customer_email: str | None,
     client_reference_id: str,
 ) -> str:
-    """Start a subscription Checkout session and return its hosted URL."""
+    """Start a one-time-payment Checkout session and return its hosted URL.
+
+    ``mode="payment"`` charges the card once and does not attach it to a saved
+    customer or set ``setup_future_usage`` — so no card details are retained
+    after the charge completes.
+    """
     client = _client()
     params: dict = {
-        "mode": "subscription",
+        "mode": "payment",
         "line_items": [{"price": price_id, "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": client_reference_id,
         "metadata": {"planId": plan_id, "userId": client_reference_id},
-        "subscription_data": {"metadata": {"planId": plan_id, "userId": client_reference_id}},
+        "payment_intent_data": {
+            "metadata": {"planId": plan_id, "userId": client_reference_id}
+        },
         "allow_promotion_codes": True,
     }
-    if customer_id:
-        params["customer"] = customer_id
-    elif customer_email:
+    if customer_email:
         params["customer_email"] = customer_email
     session = client.checkout.Session.create(**params)
-    return session.url
-
-
-def create_billing_portal_session(*, customer_id: str, return_url: str) -> str:
-    client = _client()
-    session = client.billing_portal.Session.create(
-        customer=customer_id, return_url=return_url
-    )
     return session.url
 
 

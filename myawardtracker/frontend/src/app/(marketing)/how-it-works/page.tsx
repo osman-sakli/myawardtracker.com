@@ -246,7 +246,7 @@ export default function HowItWorksPage() {
                     href="/pricing"
                     className={buttonClasses('secondary', 'lg')}
                   >
-                    Compare plans
+                    See pricing
                   </Link>
                 </div>
               </div>

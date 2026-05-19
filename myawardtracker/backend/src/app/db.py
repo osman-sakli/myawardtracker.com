@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import Any
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 
 from . import config
 
@@ -111,6 +111,19 @@ def update_user(sub: str, patch: dict) -> dict | None:
     merged = {**raw, **{k: v for k, v in patch.items() if v is not None}, "updatedAt": now_iso()}
     _table.put_item(Item=_encode(merged))
     return _public(merged)
+
+
+def list_all_users() -> list[dict]:
+    """Scan every user record — used by the bi-weekly report job only."""
+    items: list[dict] = []
+    kwargs: dict = {"FilterExpression": Attr("entityType").eq("User")}
+    while True:
+        resp = _table.scan(**kwargs)
+        items.extend(resp.get("Items", []))
+        start_key = resp.get("LastEvaluatedKey")
+        if not start_key:
+            return [_public(i) for i in items]
+        kwargs["ExclusiveStartKey"] = start_key
 
 
 # --- profiles --------------------------------------------------------------
@@ -263,28 +276,53 @@ def delete_evidence(sub: str, evidence_id: str) -> dict | None:
 
 
 def get_subscription(sub: str) -> dict:
+    """Return the stored purchase record, or ``{}`` if the user never paid."""
     item = _table.get_item(Key={"PK": _pk(sub), "SK": "SUBSCRIPTION#current"}).get("Item")
-    if not item:
-        return {
-            "userId": sub,
-            "planId": "individual",
-            "status": "none",
-            "cancelAtPeriodEnd": False,
-            "updatedAt": now_iso(),
-        }
-    return _public(item)
+    return _public(item) if item else {}
 
 
-def put_subscription(sub: str, data: dict) -> dict:
-    record = {**data, "userId": sub, "updatedAt": now_iso()}
+def grant_paid_access(
+    sub: str, days: int, stripe_customer_id: str | None = None
+) -> dict:
+    """Extend a user's paid window by ``days``.
+
+    Stacking re-purchases: a payment that lands while access is still active
+    extends from the existing ``paidUntil`` rather than from today, so the
+    buyer never loses the days they already paid for.
+    """
+    now = dt.datetime.now(dt.timezone.utc)
+    existing = get_subscription(sub)
+    base = now
+    prior = existing.get("paidUntil")
+    if prior:
+        try:
+            prior_dt = dt.datetime.strptime(prior, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=dt.timezone.utc
+            )
+            if prior_dt > now:
+                base = prior_dt
+        except ValueError:
+            pass
+    paid_until = base + dt.timedelta(days=days)
+    ts = now_iso()
+    record = {
+        "userId": sub,
+        "planId": "individual",
+        "paidUntil": paid_until.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "lastPaymentAt": ts,
+        "updatedAt": ts,
+    }
+    customer_id = stripe_customer_id or existing.get("stripeCustomerId")
+    if customer_id:
+        record["stripeCustomerId"] = customer_id
     item = {
         **record,
         "PK": _pk(sub),
         "SK": "SUBSCRIPTION#current",
         "entityType": "Subscription",
     }
-    if record.get("stripeCustomerId"):
-        item["GSI2PK"] = f"STRIPE#{record['stripeCustomerId']}"
+    if customer_id:
+        item["GSI2PK"] = f"STRIPE#{customer_id}"
         item["GSI2SK"] = _pk(sub)
     _table.put_item(Item=_encode(item))
     return record

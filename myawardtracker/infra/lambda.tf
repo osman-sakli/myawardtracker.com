@@ -52,9 +52,9 @@ data "aws_iam_policy_document" "api" {
   }
 
   statement {
-    sid       = "SsmRead"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
-    resources = ["arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/*"]
+    sid       = "StripeSecretRead"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.stripe.arn]
   }
 }
 
@@ -92,9 +92,9 @@ data "aws_iam_policy_document" "webhook" {
   }
 
   statement {
-    sid       = "SsmRead"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = ["arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/*"]
+    sid       = "StripeSecretRead"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.stripe.arn]
   }
 }
 
@@ -129,7 +129,10 @@ locals {
     EVIDENCE_BUCKET         = aws_s3_bucket.evidence.bucket
     USER_POOL_ID            = aws_cognito_user_pool.main.id
     USER_POOL_CLIENT_ID     = aws_cognito_user_pool_client.web.id
-    SSM_PREFIX              = local.ssm_prefix
+    STRIPE_SECRET_NAME      = local.stripe_secret_name
+    STRIPE_PRICE_INDIVIDUAL = var.stripe_price_individual
+    REPORT_FROM_EMAIL       = local.report_from_email
+    SITE_URL                = "https://${local.domain}"
     CORS_ORIGIN             = "https://${local.domain}"
     POWERTOOLS_LOG_LEVEL    = "INFO"
     POWERTOOLS_SERVICE_NAME = "myawardtracker"

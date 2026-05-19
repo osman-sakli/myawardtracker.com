@@ -11,8 +11,10 @@ Provisions the full AWS stack for My Award Tracker in `us-east-1`.
 | `cognito.tf` | User Pool + SPA app client |
 | `s3_frontend.tf` | Private bucket, CloudFront, OAC, security headers |
 | `s3_evidence.tf` | Private evidence bucket (presigned access) |
-| `ssm.tf` | Stripe secrets (placeholders) |
+| `secrets.tf` | Stripe credentials in Secrets Manager (placeholder) |
 | `lambda.tf` | API + webhook Lambdas, IAM roles, log groups |
+| `report.tf` | Bi-weekly report Lambda + EventBridge schedule |
+| `ses.tf` | SES domain identity + DKIM for report email |
 | `apigateway.tf` | HTTP API, JWT authorizer, routes, custom domain |
 
 ## Prerequisites
@@ -37,12 +39,18 @@ terraform apply
 
 ## Updating Stripe secrets
 
-The SSM parameters are created with `REPLACE_ME` placeholders and
-`ignore_changes` on their value. Set the real values out-of-band:
+The `myawardtracker/prod/stripe` secret is created with `REPLACE_ME`
+placeholders and `ignore_changes` on `secret_string`. Write the real live
+values out-of-band so they never enter Terraform state:
 
 ```bash
-aws ssm put-parameter --name /myawardtracker/prod/stripe/secret_key \
-  --type SecureString --value 'sk_test_...' --overwrite
-aws ssm put-parameter --name /myawardtracker/prod/stripe/webhook_secret \
-  --type SecureString --value 'whsec_...' --overwrite
+aws secretsmanager put-secret-value \
+  --secret-id myawardtracker/prod/stripe \
+  --secret-string '{"secret_key":"sk_live_...","webhook_secret":"whsec_..."}'
 ```
+
+## SES production access
+
+`ses.tf` verifies the domain and DKIM, but a new account starts in the SES
+sandbox. Request production access once in the SES console so the bi-weekly
+report email can reach unverified recipients.

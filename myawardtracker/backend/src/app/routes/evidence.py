@@ -9,7 +9,7 @@ from __future__ import annotations
 from aws_lambda_powertools.event_handler import Router
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError, NotFoundError
 
-from .. import db, storage
+from .. import db, entitlement, storage
 from ..auth import current_user
 from ..db import new_id
 from ..models import UploadUrlRequest
@@ -27,6 +27,8 @@ def list_evidence() -> dict:
 @router.post("/v1/evidence/upload-url")
 def create_upload_url() -> tuple[dict, int]:
     user = current_user(router.current_event)
+    record_user = db.ensure_user(user.sub, user.email, user.name)
+    entitlement.require_access(record_user, db.get_subscription(user.sub))
     data = UploadUrlRequest(**(router.current_event.json_body or {}))
 
     if not db.get_activity(user.sub, data.activityId):

@@ -15,8 +15,7 @@ const COLUMNS = [
     title: "Who it's for",
     links: [
       { href: '/for-students', label: 'For students' },
-      { href: '/for-parents', label: 'For parents' },
-      { href: '/for-organizations', label: 'For organizations' },
+      { href: '/pricing', label: 'Pricing & free trial' },
     ],
   },
   {
@@ -37,8 +36,8 @@ export function Footer() {
           <div className="max-w-xs">
             <Logo />
             <p className="mt-4 text-sm leading-relaxed text-content-muted">
-              The modern way for students, families, and organizations to track
-              activities, hours, and award progress.
+              The modern way for students to track activities, service hours,
+              and award progress in one place.
             </p>
           </div>
           {COLUMNS.map((col) => (

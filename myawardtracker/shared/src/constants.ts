@@ -112,12 +112,22 @@ export const CATEGORY_BY_ID: Record<string, CategoryDef> = Object.fromEntries(
   ACTIVITY_CATEGORIES.map((c) => [c.id, c]),
 );
 
+/** Length of the free trial every new account gets, in days. */
+export const FREE_TRIAL_DAYS = 15;
+
+/** How long a single one-time purchase keeps an account active, in days. */
+export const PAID_ACCESS_DAYS = 365;
+
 export interface PlanDef {
   id: PlanId;
   name: string;
-  /** Monthly price in USD. 0 means "contact us". */
+  /** One-time price in USD. */
   price: number;
   priceLabel: string;
+  /** Short line describing the billing model shown under the price. */
+  billingNote: string;
+  /** Free trial length in days. */
+  trialDays: number;
   tagline: string;
   seats: string;
   features: string[];
@@ -130,82 +140,23 @@ export const PLANS: PlanDef[] = [
   {
     id: 'individual',
     name: 'Individual',
-    price: 4.99,
-    priceLabel: '$4.99',
-    tagline: 'For a single student tracking their own journey.',
-    seats: '1 profile',
+    price: 9.99,
+    priceLabel: '$9.99',
+    billingNote: 'one-time payment · 12 months of access',
+    trialDays: FREE_TRIAL_DAYS,
+    tagline: 'Everything one student needs to track activities and awards.',
+    seats: '1 student',
     features: [
+      '15-day free trial — no card required',
       'Unlimited activity logging',
       'All activity categories',
       'Hours & award progress tracking',
       'Evidence file uploads',
       'College application summaries',
+      'Bi-weekly progress report emails',
     ],
     stripePriceEnvKey: 'STRIPE_PRICE_INDIVIDUAL',
-  },
-  {
-    id: 'family',
-    name: 'Family',
-    price: 9.99,
-    priceLabel: '$9.99',
-    tagline: 'For families managing multiple students.',
-    seats: 'Up to 5 profiles',
-    features: [
-      'Everything in Individual',
-      'Up to 5 student profiles',
-      'Parent oversight dashboard',
-      'Per-student summaries & exports',
-      'Shared evidence library',
-    ],
-    stripePriceEnvKey: 'STRIPE_PRICE_FAMILY',
     highlighted: true,
-  },
-  {
-    id: 'small_group',
-    name: 'Small Group',
-    price: 19.99,
-    priceLabel: '$19.99',
-    tagline: 'For clubs and small organizations.',
-    seats: '8–20 members',
-    features: [
-      'Everything in Family',
-      '8–20 member seats',
-      'Organization admin dashboard',
-      'Member management',
-      'Group reporting & exports',
-    ],
-    stripePriceEnvKey: 'STRIPE_PRICE_SMALL_GROUP',
-  },
-  {
-    id: 'medium_group',
-    name: 'Medium Group',
-    price: 29.99,
-    priceLabel: '$29.99',
-    tagline: 'For larger programs and chapters.',
-    seats: '20–40 members',
-    features: [
-      'Everything in Small Group',
-      '20–40 member seats',
-      'Coordinator approval workflow',
-      'Award program templates',
-      'Priority support',
-    ],
-    stripePriceEnvKey: 'STRIPE_PRICE_MEDIUM_GROUP',
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 0,
-    priceLabel: 'Custom',
-    tagline: 'For schools, nonprofits, universities, and corporations.',
-    seats: 'Unlimited members',
-    features: [
-      'Everything in Medium Group',
-      'Unlimited member seats',
-      'Multi-group / multi-tenant',
-      'SSO & advanced security',
-      'Dedicated onboarding & SLA',
-    ],
   },
 ];
 

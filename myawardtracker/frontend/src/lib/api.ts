@@ -113,8 +113,6 @@ export const api = {
 
   checkout: (input: { planId: string; successUrl: string; cancelUrl: string }) =>
     http.post<{ checkoutUrl: string }>('/v1/billing/checkout', input),
-  billingPortal: (returnUrl: string) =>
-    http.post<{ portalUrl: string }>('/v1/billing/portal', { returnUrl }),
 };
 
 /** Upload a file straight to S3 with a presigned PUT URL. */

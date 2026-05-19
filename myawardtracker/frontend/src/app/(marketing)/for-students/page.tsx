@@ -95,7 +95,7 @@ export default function ForStudentsPage() {
               </Link>
             </div>
             <p className="mt-5 text-sm text-content-subtle">
-              No credit card to get started · Cancel anytime
+              No credit card to get started · 15-day free trial
             </p>
           </div>
 
