@@ -16,6 +16,7 @@ Provisions the full AWS stack for My Award Tracker in `us-east-1`.
 | `report.tf` | Bi-weekly report Lambda + EventBridge schedule |
 | `ses.tf` | SES domain identity + DKIM for report email |
 | `apigateway.tf` | HTTP API, JWT authorizer, routes, custom domain |
+| `budgets.tf` | Optional AWS Budget alarm (set `alert_email`) |
 
 ## Prerequisites
 
@@ -28,8 +29,23 @@ Provisions the full AWS stack for My Award Tracker in `us-east-1`.
 
 ## Usage
 
+Normally you do not run Terraform here directly — `../scripts/deploy.sh` builds
+the backend, applies this stack, and deploys the frontend in one shot. See
+[`../docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
+
+> On Santa-lockdown laptops the provider plugins are SIGKILLed on launch
+> (`terraform` itself runs, but `plan`/`apply` fail loading provider schemas).
+> Run from AWS CloudShell instead.
+
+To run Terraform on its own, pass the backend config explicitly — there is no
+`backend` block, so a bare `terraform init` would silently use local state:
+
 ```bash
-terraform init
+terraform init \
+  -backend-config="bucket=myawardtracker-tfstate" \
+  -backend-config="key=prod/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="use_lockfile=true"
 terraform plan
 terraform apply
 ```
