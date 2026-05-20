@@ -20,9 +20,14 @@ resource "aws_cognito_user_pool" "main" {
     }
   }
 
-  # Free Cognito tier sends verification email via Cognito's default sender.
+  # Send through our DKIM-signed SES domain instead of Cognito's shared default
+  # sender (no-reply@verificationemail.com), which lands in spam. Same-account
+  # SES identities are auto-authorized for Cognito — no sending policy needed.
   email_configuration {
-    email_sending_account = "COGNITO_DEFAULT"
+    email_sending_account  = "DEVELOPER"
+    from_email_address     = "My Award Tracker <no-reply@${var.domain_name}>"
+    source_arn             = aws_ses_domain_identity.main.arn
+    reply_to_email_address = "support@${var.domain_name}"
   }
 
   verification_message_template {
