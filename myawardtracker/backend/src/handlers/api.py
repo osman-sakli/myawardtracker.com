@@ -20,8 +20,17 @@ from app.routes import (
     audit,
     billing,
     categories,
+    channels,
+    clock,
     evidence,
+    invites,
     me,
+    members,
+    notifications,
+    org_billing,
+    org_dashboard,
+    org_reports,
+    organizations,
     profiles,
     summary,
 )
@@ -29,6 +38,8 @@ from app.routes import (
 logger = Logger(service="myawardtracker-api")
 
 app = APIGatewayHttpResolver()
+
+# Individual / personal routes (unchanged from v1).
 app.include_router(me.router)
 app.include_router(profiles.router)
 app.include_router(activities.router)
@@ -37,6 +48,17 @@ app.include_router(categories.router)
 app.include_router(summary.router)
 app.include_router(billing.router)
 app.include_router(audit.router)
+app.include_router(notifications.router)
+
+# Organization routes.
+app.include_router(organizations.router)
+app.include_router(members.router)
+app.include_router(invites.router)
+app.include_router(channels.router)
+app.include_router(clock.router)
+app.include_router(org_dashboard.router)
+app.include_router(org_reports.router)
+app.include_router(org_billing.router)
 
 
 @app.exception_handler(ValidationError)

@@ -69,3 +69,16 @@ resource "aws_route53_record" "api" {
     evaluate_target_health = false
   }
 }
+
+# ws → WebSocket API custom domain
+resource "aws_route53_record" "ws" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = local.ws_domain
+  type    = "A"
+
+  alias {
+    name                   = aws_apigatewayv2_domain_name.ws.domain_name_configuration[0].target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.ws.domain_name_configuration[0].hosted_zone_id
+    evaluate_target_health = false
+  }
+}

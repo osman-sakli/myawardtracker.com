@@ -34,6 +34,10 @@ variable "lambda_memory_mb" {
   default     = 256
 }
 
+# ---------------------------------------------------------------------------
+# Stripe — secrets live in Secrets Manager; price ids are not secrets.
+# ---------------------------------------------------------------------------
+
 variable "stripe_secret_key" {
   description = "Stripe live secret key. Leave as placeholder; the real value is written into Secrets Manager out-of-band."
   type        = string
@@ -49,7 +53,43 @@ variable "stripe_webhook_secret" {
 }
 
 variable "stripe_price_individual" {
-  description = "Stripe price id for the one-time $9.99 Individual purchase."
+  description = "Stripe price id for the yearly $4.99 Individual subscription."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_small" {
+  description = "Stripe price id for the $39/year Small org base plan."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_medium" {
+  description = "Stripe price id for the $78/year Medium org base plan."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_large" {
+  description = "Stripe price id for the $117/year Large org base plan."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_small_storage" {
+  description = "Stripe price id for the $69/year Small org plan with storage add-on."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_medium_storage" {
+  description = "Stripe price id for the $138/year Medium org plan with storage add-on."
+  type        = string
+  default     = "REPLACE_ME"
+}
+
+variable "stripe_price_org_large_storage" {
+  description = "Stripe price id for the $207/year Large org plan with storage add-on."
   type        = string
   default     = "REPLACE_ME"
 }
@@ -65,7 +105,7 @@ variable "alert_email" {
 }
 
 variable "budget_monthly_usd" {
-  description = "Monthly cost cap (USD) for the budget alarm."
+  description = "Monthly cost cap (USD) for the budget alarm. Target architecture sits at < $30/mo."
   type        = number
-  default     = 20
+  default     = 30
 }

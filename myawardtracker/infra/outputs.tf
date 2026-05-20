@@ -18,6 +18,16 @@ output "evidence_bucket" {
   value       = aws_s3_bucket.evidence.bucket
 }
 
+output "reports_bucket" {
+  description = "Private bucket for async report exports (7-day lifecycle)."
+  value       = aws_s3_bucket.reports.bucket
+}
+
+output "ws_url" {
+  description = "WebSocket endpoint for the realtime chat."
+  value       = "wss://${local.ws_domain}"
+}
+
 output "dynamodb_table" {
   value = aws_dynamodb_table.main.name
 }
@@ -68,5 +78,6 @@ output "frontend_env" {
     NEXT_PUBLIC_COGNITO_USER_POOL_ID=${aws_cognito_user_pool.main.id}
     NEXT_PUBLIC_COGNITO_CLIENT_ID=${aws_cognito_user_pool_client.web.id}
     NEXT_PUBLIC_SITE_URL=https://${local.domain}
+    NEXT_PUBLIC_WS_URL=wss://${local.ws_domain}
   EOT
 }

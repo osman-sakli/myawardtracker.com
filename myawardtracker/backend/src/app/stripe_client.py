@@ -29,26 +29,31 @@ def create_checkout_session(
     cancel_url: str,
     customer_email: str | None,
     client_reference_id: str,
+    mode: str = "payment",
 ) -> str:
-    """Start a one-time-payment Checkout session and return its hosted URL.
+    """Start a Checkout session and return its hosted URL.
 
-    ``mode="payment"`` charges the card once and does not attach it to a saved
-    customer or set ``setup_future_usage`` — so no card details are retained
-    after the charge completes.
+    ``mode='payment'`` is used for the individual one-time purchase; org plans
+    pass ``mode='subscription'`` for the yearly recurring charge.
     """
     client = _client()
     params: dict = {
-        "mode": "payment",
+        "mode": mode,
         "line_items": [{"price": price_id, "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": client_reference_id,
-        "metadata": {"planId": plan_id, "userId": client_reference_id},
-        "payment_intent_data": {
-            "metadata": {"planId": plan_id, "userId": client_reference_id}
-        },
+        "metadata": {"planId": plan_id, "ref": client_reference_id},
         "allow_promotion_codes": True,
     }
+    if mode == "payment":
+        params["payment_intent_data"] = {
+            "metadata": {"planId": plan_id, "ref": client_reference_id}
+        }
+    elif mode == "subscription":
+        params["subscription_data"] = {
+            "metadata": {"planId": plan_id, "ref": client_reference_id}
+        }
     if customer_email:
         params["customer_email"] = customer_email
     session = client.checkout.Session.create(**params)

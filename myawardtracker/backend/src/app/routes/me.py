@@ -1,4 +1,4 @@
-"""Account routes: the authenticated user and their subscription."""
+"""Account routes: the authenticated user, their subscription, their orgs."""
 
 from __future__ import annotations
 
@@ -17,7 +17,12 @@ def get_me() -> dict:
     user = current_user(router.current_event)
     record = db.ensure_user(user.sub, user.email, user.name)
     subscription = entitlement.describe(record, db.get_subscription(user.sub))
-    return {"user": record, "subscription": subscription}
+    memberships = db.list_organizations_for_user(user.sub)
+    return {
+        "user": record,
+        "subscription": subscription,
+        "memberships": memberships,
+    }
 
 
 @router.patch("/v1/me")

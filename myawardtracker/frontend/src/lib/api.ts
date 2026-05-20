@@ -6,10 +6,19 @@ import type {
   Activity,
   ActivityInput,
   AuditEntry,
+  Channel,
+  ChatMessage,
+  ClockSession,
   DashboardSummary,
   Evidence,
+  Membership,
+  OrgDashboardSummary,
+  OrgRole,
+  OrgSubscription,
+  Organization,
   Profile,
   ProfileInput,
+  ReportJob,
   Subscription,
   User,
 } from './types';
@@ -70,7 +79,12 @@ function query(params: Record<string, string | undefined>): string {
 }
 
 export const api = {
-  getMe: () => http.get<{ user: User; subscription: Subscription }>('/v1/me'),
+  getMe: () =>
+    http.get<{
+      user: User;
+      subscription: Subscription;
+      memberships: Array<{ org: Organization; role: OrgRole }>;
+    }>('/v1/me'),
   updateMe: (patch: Partial<Pick<User, 'fullName' | 'defaultProfileId'>>) =>
     http.patch<{ user: User }>('/v1/me', patch),
 
@@ -111,8 +125,122 @@ export const api = {
 
   listAudit: () => http.get<{ audit: AuditEntry[] }>('/v1/audit'),
 
-  checkout: (input: { planId: string; successUrl: string; cancelUrl: string }) =>
+  checkout: (input: { planId: string; orgId?: string; successUrl: string; cancelUrl: string }) =>
     http.post<{ checkoutUrl: string }>('/v1/billing/checkout', input),
+
+  // ---- Organizations -----------------------------------------------------
+  listOrgs: () =>
+    http.get<{ memberships: Array<{ org: Organization; role: OrgRole }> }>('/v1/orgs'),
+  createOrg: (input: {
+    name: string;
+    slug?: string;
+    type: string;
+    description?: string;
+    storageEnabled?: boolean;
+  }) => http.post<{ org: Organization; role: OrgRole }>('/v1/orgs', input),
+  getOrg: (orgId: string) =>
+    http.get<{ org: Organization; role: OrgRole; subscription: OrgSubscription }>(
+      `/v1/orgs/${orgId}`,
+    ),
+  updateOrg: (orgId: string, patch: Partial<Organization>) =>
+    http.patch<{ org: Organization }>(`/v1/orgs/${orgId}`, patch),
+  deleteOrg: (orgId: string) =>
+    http.del<{ deleted: boolean }>(`/v1/orgs/${orgId}`),
+
+  // ---- Members & invites -------------------------------------------------
+  listMembers: (orgId: string) =>
+    http.get<{ members: Membership[] }>(`/v1/orgs/${orgId}/members`),
+  changeMemberRole: (orgId: string, sub: string, role: OrgRole) =>
+    http.patch<{ member: Membership }>(`/v1/orgs/${orgId}/members/${sub}`, { role }),
+  removeMember: (orgId: string, sub: string) =>
+    http.del<{ removed: boolean }>(`/v1/orgs/${orgId}/members/${sub}`),
+  leaveOrg: (orgId: string) =>
+    http.del<{ left: boolean }>(`/v1/orgs/${orgId}/members/me`),
+  invite: (orgId: string, email: string, role: OrgRole) =>
+    http.post<{ invite: { token: string; email: string; role: OrgRole } }>(
+      `/v1/orgs/${orgId}/invites`,
+      { email, role },
+    ),
+  listInvites: (orgId: string) =>
+    http.get<{ invites: Array<{ token: string; email: string; role: OrgRole; expiresAt: string }> }>(
+      `/v1/orgs/${orgId}/invites`,
+    ),
+  revokeInvite: (orgId: string, token: string) =>
+    http.del<{ revoked: boolean }>(`/v1/orgs/${orgId}/invites/${token}`),
+  acceptInvite: (token: string) =>
+    http.post<{ orgId: string; role: OrgRole }>('/v1/invites/accept', { token }),
+
+  // ---- Channels & chat ---------------------------------------------------
+  listChannels: (orgId: string) =>
+    http.get<{ channels: Channel[] }>(`/v1/orgs/${orgId}/channels`),
+  createChannel: (
+    orgId: string,
+    input: { name: string; description?: string; minRole?: OrgRole },
+  ) => http.post<{ channel: Channel }>(`/v1/orgs/${orgId}/channels`, input),
+  listMessages: (orgId: string, channelId: string, before?: string) =>
+    http.get<{ messages: ChatMessage[] }>(
+      `/v1/orgs/${orgId}/channels/${channelId}/messages${query({ before })}`,
+    ),
+  postMessage: (orgId: string, channelId: string, body: string) =>
+    http.post<{ message: ChatMessage }>(
+      `/v1/orgs/${orgId}/channels/${channelId}/messages`,
+      { body },
+    ),
+
+  // ---- Clock -------------------------------------------------------------
+  clockIn: (orgId: string, input: { activityType: string; notes?: string; profileId?: string }) =>
+    http.post<{ session: ClockSession }>(`/v1/orgs/${orgId}/clock/in`, input),
+  clockOut: (orgId: string, input: { notes?: string }) =>
+    http.post<{ session: ClockSession }>(`/v1/orgs/${orgId}/clock/out`, input),
+  mySessions: (orgId: string) =>
+    http.get<{ sessions: ClockSession[]; open: ClockSession | null }>(
+      `/v1/orgs/${orgId}/clock/mine`,
+    ),
+  orgSessions: (orgId: string, from?: string, to?: string) =>
+    http.get<{ sessions: ClockSession[]; from: string; to: string }>(
+      `/v1/orgs/${orgId}/clock/all${query({ from, to })}`,
+    ),
+  decideSession: (
+    orgId: string,
+    memberSub: string,
+    sessionSk: string,
+    input: { decision: 'approve' | 'reject'; note?: string },
+  ) =>
+    http.post<{ session: ClockSession }>(
+      `/v1/orgs/${orgId}/clock/${memberSub}/${encodeURIComponent(sessionSk.replaceAll('#', '__'))}/decide`,
+      input,
+    ),
+
+  // ---- Dashboard / leaderboard ------------------------------------------
+  orgSummary: (orgId: string, days = 30) =>
+    http.get<{ summary: OrgDashboardSummary }>(`/v1/orgs/${orgId}/summary?days=${days}`),
+  leaderboard: (orgId: string) =>
+    http.get<{ month: string; topMembers: Array<{ userSub: string; userName: string; hours: number }>; totalHours: number }>(
+      `/v1/orgs/${orgId}/leaderboard`,
+    ),
+
+  // ---- Reports -----------------------------------------------------------
+  createReport: (
+    orgId: string,
+    input: { kind: string; format: 'csv' | 'pdf'; from: string; to: string },
+  ) => http.post<{ job: ReportJob }>(`/v1/orgs/${orgId}/reports`, input),
+  listReports: (orgId: string) =>
+    http.get<{ jobs: ReportJob[] }>(`/v1/orgs/${orgId}/reports`),
+  getReport: (orgId: string, jobId: string) =>
+    http.get<{ job: ReportJob }>(`/v1/orgs/${orgId}/reports/${jobId}`),
+
+  // ---- Org billing -------------------------------------------------------
+  orgCheckout: (
+    orgId: string,
+    input: { planId: string; successUrl: string; cancelUrl: string },
+  ) =>
+    http.post<{ checkoutUrl: string }>(`/v1/orgs/${orgId}/billing/checkout`, input),
+
+  // ---- Notifications -----------------------------------------------------
+  listNotifications: () =>
+    http.get<{ notifications: Array<{ id: string; title: string; body?: string; href?: string; read: boolean; createdAt: string }> }>(
+      '/v1/notifications',
+    ),
 };
 
 /** Upload a file straight to S3 with a presigned PUT URL. */

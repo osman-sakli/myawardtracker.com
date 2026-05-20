@@ -2,3 +2,6 @@
 # boto3 is provided by the Lambda runtime and is intentionally not pinned here.
 aws-lambda-powertools[parser]>=3.4,<4.0
 stripe>=11.0,<13.0
+pydantic[email]>=2.5,<3.0
+reportlab>=4.0,<5.0
+python-jose[cryptography]>=3.3,<4.0

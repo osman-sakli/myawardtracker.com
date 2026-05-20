@@ -38,9 +38,17 @@ CATEGORY_LABELS: dict[str, str] = {
 ACTIVITY_STATUSES = {"planned", "in_progress", "completed", "verified"}
 
 PLAN_IDS = {"individual"}
+ORG_PLAN_IDS = {
+    "org_small",
+    "org_medium",
+    "org_large",
+    "org_small_storage",
+    "org_medium_storage",
+    "org_large_storage",
+}
 
 # Access lifecycle.
-FREE_TRIAL_DAYS = 15
+FREE_TRIAL_DAYS = 30  # was 15 — promoted to 30 in the SaaS migration.
 PAID_ACCESS_DAYS = 365
 
 # award program id -> goal hours (None when not hour-based)
@@ -70,3 +78,42 @@ ALLOWED_EVIDENCE_TYPES = {
     "image/heic",
     "application/pdf",
 }
+
+# --- Org RBAC / billing ---------------------------------------------------
+
+ORG_ROLES = ("owner", "admin", "manager", "moderator", "member", "viewer")
+ORG_TYPES = (
+    "school_club",
+    "school",
+    "nonprofit",
+    "scout_troop",
+    "university",
+    "leadership_program",
+    "community",
+)
+
+# Tier ladder: (tier_id, max_members, base_usd, storage_usd)
+ORG_TIERS: list[tuple[str, int, int, int]] = [
+    ("small", 50, 39, 69),
+    ("medium", 300, 78, 138),
+    ("large", 500, 117, 207),
+]
+
+
+def tier_for_member_count(member_count: int) -> str:
+    """Return the smallest tier id whose cap covers ``member_count``."""
+    for tier_id, cap, *_ in ORG_TIERS:
+        if member_count <= cap:
+            return tier_id
+    return ORG_TIERS[-1][0]
+
+
+# --- Retention -----------------------------------------------------------
+
+DEFAULT_CHAT_RETENTION_DAYS = 30
+CLOCK_SESSION_RETENTION_DAYS = 90
+SNAPSHOT_RETENTION_DAYS = 730
+INVITE_TTL_DAYS = 14
+NOTIFICATION_RETENTION_DAYS = 30
+AUDIT_RETENTION_DAYS = 365
+WS_CONNECTION_TTL_HOURS = 2
