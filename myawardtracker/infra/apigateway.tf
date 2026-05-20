@@ -46,9 +46,14 @@ resource "aws_apigatewayv2_integration" "webhook" {
   payload_format_version = "2.0"
 }
 
+# One route per real method so the JWT authorizer never sees the CORS
+# preflight. OPTIONS is left unrouted on purpose: with cors_configuration set,
+# API Gateway answers preflight requests itself (204) without authorization.
 resource "aws_apigatewayv2_route" "api" {
+  for_each = toset(["GET", "POST", "PATCH", "DELETE"])
+
   api_id             = aws_apigatewayv2_api.main.id
-  route_key          = "ANY /v1/{proxy+}"
+  route_key          = "${each.key} /v1/{proxy+}"
   target             = "integrations/${aws_apigatewayv2_integration.api.id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
