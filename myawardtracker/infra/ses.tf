@@ -79,12 +79,14 @@ resource "aws_route53_record" "spf" {
   records = ["v=spf1 include:amazonses.com ~all"]
 }
 
-# DMARC: monitor-only (p=none) so legitimate mail is never dropped while we
-# confirm alignment; tighten to quarantine/reject later.
+# DMARC: quarantine unaligned mail. Our SES sends are DKIM-signed and SPF-aligned
+# via the custom MAIL FROM, so legitimate mail passes; spoofed/unaligned mail
+# goes to the recipient's spam folder. Tighten to p=reject once rua reports
+# confirm no legitimate stream is failing.
 resource "aws_route53_record" "dmarc" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = "_dmarc.${var.domain_name}"
   type    = "TXT"
   ttl     = 600
-  records = ["v=DMARC1; p=none; rua=mailto:dmarc@${var.domain_name}; fo=1"]
+  records = ["v=DMARC1; p=quarantine; rua=mailto:dmarc@${var.domain_name}; fo=1"]
 }
