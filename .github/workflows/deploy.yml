@@ -83,6 +83,8 @@ jobs:
             -backend-config="use_lockfile=true"
 
       - name: Terraform apply
+        env:
+          TF_VAR_stripe_price_individual: ${{ vars.STRIPE_PRICE_INDIVIDUAL }}
         run: terraform -chdir=infra apply -auto-approve -input=false
 
       - name: Capture Terraform outputs
