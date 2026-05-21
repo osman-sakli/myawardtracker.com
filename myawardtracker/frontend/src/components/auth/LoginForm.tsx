@@ -3,7 +3,7 @@
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { FormField, Input } from '@/components/ui/form';
@@ -17,6 +17,7 @@ import {
 } from '@/lib/auth';
 import { isAuthConfigured } from '@/lib/env';
 import { authErrorMessage, isUnconfirmedError } from './errors';
+import { captureInviteFromUrl, consumePendingInvite } from './invite';
 
 type Mode = 'signin' | 'confirm' | 'forgot' | 'reset';
 
@@ -24,6 +25,22 @@ function safeNext(): string {
   if (typeof window === 'undefined') return '/dashboard';
   const next = new URLSearchParams(window.location.search).get('next');
   return next && next.startsWith('/') ? next : '/dashboard';
+}
+
+/** After auth, redeem any captured invite and route accordingly. */
+async function postAuthRoute(
+  toast: (msg: string, tone?: 'success' | 'error' | 'info') => void,
+): Promise<string> {
+  try {
+    const orgId = await consumePendingInvite();
+    if (orgId) {
+      toast('Invite accepted — welcome aboard.', 'success');
+      return `/dashboard/org/?id=${orgId}`;
+    }
+  } catch (err) {
+    toast(err instanceof Error ? err.message : 'Could not accept invite.', 'error');
+  }
+  return safeNext();
 }
 
 export function LoginForm() {
@@ -37,6 +54,11 @@ export function LoginForm() {
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasInvite, setHasInvite] = useState(false);
+
+  useEffect(() => {
+    setHasInvite(Boolean(captureInviteFromUrl()));
+  }, []);
 
   const run = async (fn: () => Promise<void>) => {
     setError('');
@@ -55,7 +77,7 @@ export function LoginForm() {
     void run(async () => {
       try {
         await signIn(email, password);
-        router.replace(safeNext());
+        router.replace(await postAuthRoute(toast));
       } catch (err) {
         if (isUnconfirmedError(err)) {
           await resendConfirmationCode(email).catch(() => undefined);
@@ -73,7 +95,7 @@ export function LoginForm() {
     void run(async () => {
       await confirmSignUp(email, code.trim());
       await signIn(email, password);
-      router.replace(safeNext());
+      router.replace(await postAuthRoute(toast));
     });
   };
 
@@ -125,6 +147,12 @@ export function LoginForm() {
       <p className="mt-1.5 text-sm text-content-muted">
         {heading[mode].subtitle}
       </p>
+
+      {hasInvite && mode === 'signin' && (
+        <div className="mt-5 rounded-xl border border-brand/25 bg-brand/10 p-3 text-sm text-content">
+          You're accepting an organization invite. Sign in and we'll add you automatically.
+        </div>
+      )}
 
       {!isAuthConfigured && (
         <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-warning/25 bg-warning/10 p-3 text-sm text-warning">
