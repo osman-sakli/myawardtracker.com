@@ -58,7 +58,13 @@ def _jwks() -> dict:
         f"https://cognito-idp.{config.AWS_REGION}.amazonaws.com/"
         f"{config.USER_POOL_ID}/.well-known/jwks.json"
     )
-    with urllib.request.urlopen(url, timeout=3) as resp:  # noqa: S310
+    # Defense in depth: the URL is built from Terraform-provided env vars, but
+    # we still pin the scheme so a misconfigured pool id can never coerce a
+    # different scheme (file://, http://). Bandit B310 is suppressed because
+    # the URL is fully constant per deploy and HTTPS-only.
+    if not url.startswith("https://"):
+        raise RuntimeError("jwks URL must be https")
+    with urllib.request.urlopen(url, timeout=3) as resp:  # nosec B310
         return json.loads(resp.read())
 
 
