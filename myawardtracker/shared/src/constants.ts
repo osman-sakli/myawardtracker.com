@@ -245,7 +245,7 @@ export function tierForMemberCount(memberCount: number): OrgTierDef {
     if (memberCount <= tier.maxMembers) return tier;
   }
   // Above 500 members → still treated as Large until enterprise contact-sales path.
-  return ORG_TIERS[ORG_TIERS.length - 1];
+  return ORG_TIERS[ORG_TIERS.length - 1]!;
 }
 
 /** Returns the Stripe price env-key for a given org plan id. */

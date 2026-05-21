@@ -38,28 +38,44 @@ export const ORG_HOME: NavItem = {
   icon: Building2,
 };
 
-/** Per-organization sub-nav. Pass orgId to expand the {orgId} segment. */
+/** Per-organization sub-nav. Pass orgId to expand the `id` query param.
+ *  We route by query params because the site is statically exported and the
+ *  dynamic `[orgId]` segment can't be pre-generated. See
+ *  src/app/dashboard/org/page.tsx for the dispatcher. */
 export function orgNav(orgId: string): NavItem[] {
+  const base = `/dashboard/org/?id=${orgId}`;
   return [
-    { href: `/dashboard/org/${orgId}`, label: 'Overview', icon: LayoutDashboard },
-    { href: `/dashboard/org/${orgId}/members`, label: 'Members', icon: Users },
-    { href: `/dashboard/org/${orgId}/chat`, label: 'Team chat', icon: MessageSquare },
-    { href: `/dashboard/org/${orgId}/clock`, label: 'Clock in/out', icon: Clock },
-    { href: `/dashboard/org/${orgId}/leaderboard`, label: 'Leaderboard', icon: Trophy },
-    { href: `/dashboard/org/${orgId}/reports`, label: 'Reports', icon: FileText },
-    { href: `/dashboard/org/${orgId}/billing`, label: 'Billing', icon: CreditCard },
-    { href: `/dashboard/org/${orgId}/settings`, label: 'Settings', icon: Settings },
+    { href: base, label: 'Overview', icon: LayoutDashboard },
+    { href: `${base}&tab=members`, label: 'Members', icon: Users },
+    { href: `${base}&tab=chat`, label: 'Team chat', icon: MessageSquare },
+    { href: `${base}&tab=clock`, label: 'Clock in/out', icon: Clock },
+    { href: `${base}&tab=leaderboard`, label: 'Leaderboard', icon: Trophy },
+    { href: `${base}&tab=reports`, label: 'Reports', icon: FileText },
+    { href: `${base}&tab=billing`, label: 'Billing', icon: CreditCard },
+    { href: `${base}&tab=settings`, label: 'Settings', icon: Settings },
   ];
 }
 
 // Legacy alias so existing imports keep working.
 export const DASHBOARD_NAV = PERSONAL_NAV;
 
-export function navTitle(pathname: string): string {
+const ORG_TAB_LABELS: Record<string, string> = {
+  members: 'Members',
+  chat: 'Team chat',
+  clock: 'Clock in/out',
+  leaderboard: 'Leaderboard',
+  reports: 'Reports',
+  billing: 'Org billing',
+  settings: 'Org settings',
+};
+
+export function navTitle(pathname: string, tab?: string | null): string {
   const exact = PERSONAL_NAV.find((n) => n.href === pathname);
   if (exact) return exact.label;
-  if (pathname.startsWith('/dashboard/org/')) return 'Organization';
   if (pathname.startsWith('/dashboard/organizations')) return 'Organizations';
+  if (pathname.startsWith('/dashboard/org')) {
+    return (tab && ORG_TAB_LABELS[tab]) || 'Organization';
+  }
   const nested = PERSONAL_NAV.filter((n) => n.href !== '/dashboard').find((n) =>
     pathname.startsWith(n.href),
   );

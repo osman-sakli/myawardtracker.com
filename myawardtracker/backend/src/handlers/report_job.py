@@ -172,7 +172,7 @@ def _process_job(org_id: str, job_id: str) -> None:
                 "orgId": org_id,
                 "kind": "report_ready",
                 "title": f"Report ready: {job['kind']}",
-                "href": f"/dashboard/org/{org_id}/reports/{job_id}",
+                "href": f"/dashboard/org/?id={org_id}&tab=reports",
             },
         )
     except Exception as exc:  # noqa: BLE001

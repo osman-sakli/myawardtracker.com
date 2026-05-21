@@ -107,7 +107,7 @@ def decide(org_id: str, member_sub: str, session_sk: str) -> dict:
             "kind": "clock_approved" if data.decision == "approve" else "clock_rejected",
             "title": "Clock session " + ("approved" if data.decision == "approve" else "rejected"),
             "body": data.note or "",
-            "href": f"/dashboard/org/{org_id}/clock",
+            "href": f"/dashboard/org/?id={org_id}&tab=clock",
         },
     )
     return {"session": session}
