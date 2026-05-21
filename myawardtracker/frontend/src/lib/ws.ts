@@ -38,7 +38,10 @@ export function useChatSocket({ orgId, channelId, onMessage }: UseChatSocketArgs
     const open = async () => {
       const token = await getAuthToken();
       if (!token || !active) return;
-      const url = `${env.wsUrl}/prod?token=${encodeURIComponent(token)}&orgId=${orgId}&channelId=${channelId}`;
+      // The custom domain maps root → stage `prod`, so we connect at the
+      // root. Including `/prod` here yields an unmapped path and a 403 at
+      // the gateway before $connect runs.
+      const url = `${env.wsUrl}/?token=${encodeURIComponent(token)}&orgId=${orgId}&channelId=${channelId}`;
       const sock = new WebSocket(url);
       sockRef.current = sock;
 
