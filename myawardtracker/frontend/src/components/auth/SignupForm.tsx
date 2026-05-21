@@ -3,7 +3,7 @@
 import { AlertCircle, ArrowLeft, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { FormField, Input } from '@/components/ui/form';
@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { confirmSignUp, resendConfirmationCode, signIn, signUp } from '@/lib/auth';
 import { isAuthConfigured } from '@/lib/env';
 import { authErrorMessage } from './errors';
+import { captureInviteFromUrl, consumePendingInvite } from './invite';
 
 const RULES = [
   { label: 'At least 10 characters', test: (p: string) => p.length >= 10 },
@@ -29,6 +30,11 @@ export function SignupForm() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasInvite, setHasInvite] = useState(false);
+
+  useEffect(() => {
+    setHasInvite(Boolean(captureInviteFromUrl()));
+  }, []);
 
   const passwordValid = RULES.every((r) => r.test(password));
 
@@ -55,7 +61,20 @@ export function SignupForm() {
     setLoading(true);
     confirmSignUp(email, code.trim())
       .then(() => signIn(email, password))
-      .then(() => router.replace('/dashboard'))
+      .then(async () => {
+        try {
+          const orgId = await consumePendingInvite();
+          if (orgId) {
+            toast('Invite accepted — welcome aboard.', 'success');
+            router.replace(`/dashboard/org/?id=${orgId}`);
+            return;
+          }
+        } catch (err) {
+          // Don't block dashboard entry on a bad invite; surface it as a toast.
+          toast(err instanceof Error ? err.message : 'Could not accept invite.', 'error');
+        }
+        router.replace('/dashboard');
+      })
       .catch((err) => {
         setError(authErrorMessage(err));
         setLoading(false);
@@ -118,6 +137,16 @@ export function SignupForm() {
       <p className="mt-1.5 text-sm text-content-muted">
         Start tracking activities and award progress in minutes.
       </p>
+
+      {hasInvite && (
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-brand/25 bg-brand/10 p-3 text-sm text-content">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+          <span>
+            You're accepting an invite — finish signing up and we'll add you to the
+            organization automatically.
+          </span>
+        </div>
+      )}
 
       {!isAuthConfigured && (
         <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-warning/25 bg-warning/10 p-3 text-sm text-warning">

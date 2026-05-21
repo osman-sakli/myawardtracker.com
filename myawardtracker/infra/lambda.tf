@@ -65,6 +65,18 @@ data "aws_iam_policy_document" "api" {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.stripe.arn]
   }
+
+  statement {
+    sid       = "SesInviteSend"
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = [aws_ses_domain_identity.main.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "ses:FromAddress"
+      values   = [local.report_from_email]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "api" {

@@ -15,7 +15,7 @@ from aws_lambda_powertools.event_handler.exceptions import (
     NotFoundError,
 )
 
-from .. import db, rbac, tenancy
+from .. import db, mailer, rbac, tenancy
 from ..auth import current_user
 from ..constants import ORG_TIERS, tier_for_member_count
 from ..models import InviteAccept, InviteCreate
@@ -58,12 +58,18 @@ def create_invite(org_id: str):
 
     data = InviteCreate(**(router.current_event.json_body or {}))
     invite = db.create_invite(org_id, data.email, data.role, user.sub)
+    mail_sent = mailer.send_invite(
+        to=data.email,
+        org_name=org.get("name", "your organization"),
+        role=data.role,
+        inviter_name=user.name or user.email or "An organization admin",
+        token=invite["token"],
+    )
     db.add_org_audit(
         org_id, user.sub, "invite.created", "invite", invite["id"],
-        {"email": data.email, "role": data.role},
+        {"email": data.email, "role": data.role, "mailSent": mail_sent},
     )
-    # TODO: send invite email via SES once the verified sender is configured.
-    return {"invite": invite}, 201
+    return {"invite": invite, "emailSent": mail_sent}, 201
 
 
 @router.get("/v1/orgs/<org_id>/invites")
