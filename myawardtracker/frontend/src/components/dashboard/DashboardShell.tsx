@@ -1,14 +1,16 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useState, type ReactNode } from 'react';
 
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { navTitle } from './nav';
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+function ShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const search = useSearchParams();
+  const tab = pathname.startsWith('/dashboard/org') ? search.get('tab') : null;
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -32,11 +34,19 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="flex min-h-screen flex-col">
-        <Topbar title={navTitle(pathname)} onMenu={() => setMobileOpen(true)} />
+        <Topbar title={navTitle(pathname, tab)} onMenu={() => setMobileOpen(true)} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-7 sm:px-8">
           {children}
         </main>
       </div>
     </div>
+  );
+}
+
+export function DashboardShell({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <ShellInner>{children}</ShellInner>
+    </Suspense>
   );
 }

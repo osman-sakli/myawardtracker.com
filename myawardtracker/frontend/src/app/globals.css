@@ -4,6 +4,10 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+  }
+
+  html.dark {
     color-scheme: dark;
   }
 
@@ -22,8 +26,8 @@
   }
 
   ::selection {
-    background: rgba(124, 107, 255, 0.32);
-    color: #fff;
+    background: rgba(59, 109, 240, 0.22);
+    color: #0f172a;
   }
 
   ::-webkit-scrollbar {
@@ -34,12 +38,22 @@
     @apply rounded-full bg-border-strong;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #444a60;
+    background: #94a3b8;
   }
 
   :focus-visible {
     outline: 2px solid theme('colors.brand.DEFAULT');
     outline-offset: 2px;
+  }
+
+  /* Opt-in dark palette — flipped tokens. Add `dark` to <html> from a theme
+     toggle and every page rebalances. */
+  html.dark body {
+    background-color: #0c0f17;
+    color: #e4e8f1;
+  }
+  html.dark {
+    --tw-prose-body: #e4e8f1;
   }
 }
 
@@ -50,7 +64,7 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(120deg, #ffffff 0%, #c9c4ff 45%, #7c6bff 100%);
+    background-image: linear-gradient(120deg, #1b2230 0%, #3b6df0 60%, #0fb5a8 100%);
   }
 
   .surface-card {
@@ -78,7 +92,7 @@
 
 @layer utilities {
   .bg-dots {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(59, 109, 240, 0.10) 1px, transparent 1px);
     background-size: 22px 22px;
   }
 

@@ -5,6 +5,7 @@ export const env = {
   userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID ?? '',
   userPoolClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID ?? '',
   siteUrl: (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, ''),
+  wsUrl: (process.env.NEXT_PUBLIC_WS_URL ?? '').replace(/\/$/, ''),
 };
 
 export const isAuthConfigured = Boolean(env.userPoolId && env.userPoolClientId);

@@ -128,3 +128,117 @@ export interface ActivityInput {
   notes?: string;
   awardPrograms?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Organization-scoped shapes (mirror shared/src/types.ts).
+// ---------------------------------------------------------------------------
+
+export type OrgRole =
+  | 'owner'
+  | 'admin'
+  | 'manager'
+  | 'moderator'
+  | 'member'
+  | 'viewer';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  description?: string;
+  ownerSub: string;
+  memberCount: number;
+  tier: 'small' | 'medium' | 'large';
+  storageEnabled: boolean;
+  chatRetentionDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Membership {
+  id: string;
+  orgId: string;
+  userSub: string;
+  email: string;
+  fullName: string;
+  role: OrgRole;
+  joinedAt: string;
+}
+
+export interface OrgSubscription {
+  orgId: string;
+  tier: 'small' | 'medium' | 'large';
+  storageEnabled: boolean;
+  status: 'trialing' | 'active' | 'expired';
+  paidUntil?: string;
+  daysRemaining: number;
+  trialEndsAt?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+}
+
+export interface Channel {
+  id: string;
+  orgId: string;
+  name: string;
+  description?: string;
+  minRole?: OrgRole;
+  messageCount: number;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  orgId: string;
+  channelId: string;
+  authorSub: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  expiresAt: number;
+  pinned?: boolean;
+  reactions?: Record<string, string[]>;
+}
+
+export interface ClockSession {
+  id: string;
+  orgId: string;
+  userSub: string;
+  userName: string;
+  activityType: string;
+  startedAt: string;
+  endedAt?: string;
+  hours?: number;
+  status: 'open' | 'pending' | 'approved' | 'rejected';
+  notes?: string;
+  decidedBySub?: string;
+  decidedAt?: string;
+  decisionNote?: string;
+}
+
+export interface OrgDashboardSummary {
+  orgId: string;
+  windowDays: number;
+  totalHours: number;
+  approvedHours: number;
+  totalClockIns: number;
+  activeMembers: number;
+  topMembers: Array<{ userSub: string; userName: string; hours: number }>;
+  daily: Array<{ date: string; hours: number; clockIns: number }>;
+}
+
+export interface ReportJob {
+  id: string;
+  orgId: string;
+  requestedBySub: string;
+  kind: string;
+  format: 'csv' | 'pdf';
+  from: string;
+  to: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  downloadUrl?: string;
+  error?: string;
+  createdAt: string;
+  finishedAt?: string;
+}

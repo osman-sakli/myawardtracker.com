@@ -1,9 +1,17 @@
 /**
  * Application constants shared by frontend and backend:
- * built-in activity categories, subscription plans, and award programs.
+ * built-in activity categories, subscription plans, award programs, and the
+ * organization tier ladder.
  */
 
-import type { BuiltInCategoryId, PlanId } from './types';
+import type {
+  BuiltInCategoryId,
+  OrgPermission,
+  OrgPlanId,
+  OrgRole,
+  OrgTierId,
+  PlanId,
+} from './types';
 
 export interface CategoryDef {
   id: BuiltInCategoryId;
@@ -113,15 +121,28 @@ export const CATEGORY_BY_ID: Record<string, CategoryDef> = Object.fromEntries(
 );
 
 /** Length of the free trial every new account gets, in days. */
-export const FREE_TRIAL_DAYS = 15;
+export const FREE_TRIAL_DAYS = 30;
 
-/** How long a single one-time purchase keeps an account active, in days. */
+/** How long an active individual subscription lasts before it auto-renews, in days. */
 export const PAID_ACCESS_DAYS = 365;
+
+/** Chat retention default — see Organization.chatRetentionDays for per-org override. */
+export const DEFAULT_CHAT_RETENTION_DAYS = 30;
+
+/** Raw clock-session retention; aggregates outlive this. */
+export const CLOCK_SESSION_RETENTION_DAYS = 90;
+
+/** Daily snapshot retention. */
+export const SNAPSHOT_RETENTION_DAYS = 730;
+
+// ---------------------------------------------------------------------------
+// Individual plan
+// ---------------------------------------------------------------------------
 
 export interface PlanDef {
   id: PlanId;
   name: string;
-  /** One-time price in USD. */
+  /** Yearly price in USD. */
   price: number;
   priceLabel: string;
   /** Short line describing the billing model shown under the price. */
@@ -140,23 +161,24 @@ export const PLANS: PlanDef[] = [
   {
     id: 'individual',
     name: 'Individual',
-    price: 9.99,
-    priceLabel: '$9.99',
-    billingNote: 'one-time payment · 12 months of access',
+    price: 4.99,
+    priceLabel: '$4.99',
+    billingNote: 'per year · cancel anytime',
     trialDays: FREE_TRIAL_DAYS,
-    tagline: 'Everything one student needs to track activities and awards.',
+    tagline:
+      'Everything one student needs to track activities and awards, plus join organizations free.',
     seats: '1 student',
     features: [
-      '15-day free trial — no card required',
+      '30-day free trial — no card required',
       'Unlimited activity logging',
       'All activity categories',
       'Hours & award progress tracking',
       'Evidence file uploads',
-      'College application summaries',
-      'Bi-weekly progress report emails',
+      'Personal reporting & college portfolio',
+      'Join unlimited organizations as a free member',
     ],
     stripePriceEnvKey: 'STRIPE_PRICE_INDIVIDUAL',
-    highlighted: true,
+    highlighted: false,
   },
 ];
 
@@ -164,7 +186,153 @@ export const PLAN_BY_ID: Record<string, PlanDef> = Object.fromEntries(
   PLANS.map((p) => [p.id, p]),
 );
 
-/** Award programs the app can map activities to (catalog seed). */
+// ---------------------------------------------------------------------------
+// Organization plans
+// ---------------------------------------------------------------------------
+
+export interface OrgTierDef {
+  id: OrgTierId;
+  label: string;
+  /** Inclusive member cap for the tier. */
+  maxMembers: number;
+  /** Yearly base price in USD. */
+  basePriceUsd: number;
+  /** Yearly price with the storage add-on enabled. */
+  storagePriceUsd: number;
+  /** Env var name carrying the Stripe price id for the base plan. */
+  stripePriceEnvKey: string;
+  /** Env var name for the storage-add-on Stripe price id. */
+  stripeStoragePriceEnvKey: string;
+}
+
+export const ORG_TIERS: OrgTierDef[] = [
+  {
+    id: 'small',
+    label: 'Small organization',
+    maxMembers: 50,
+    basePriceUsd: 39,
+    storagePriceUsd: 69,
+    stripePriceEnvKey: 'STRIPE_PRICE_ORG_SMALL',
+    stripeStoragePriceEnvKey: 'STRIPE_PRICE_ORG_SMALL_STORAGE',
+  },
+  {
+    id: 'medium',
+    label: 'Medium organization',
+    maxMembers: 300,
+    basePriceUsd: 78,
+    storagePriceUsd: 138,
+    stripePriceEnvKey: 'STRIPE_PRICE_ORG_MEDIUM',
+    stripeStoragePriceEnvKey: 'STRIPE_PRICE_ORG_MEDIUM_STORAGE',
+  },
+  {
+    id: 'large',
+    label: 'Large organization',
+    maxMembers: 500,
+    basePriceUsd: 117,
+    storagePriceUsd: 207,
+    stripePriceEnvKey: 'STRIPE_PRICE_ORG_LARGE',
+    stripeStoragePriceEnvKey: 'STRIPE_PRICE_ORG_LARGE_STORAGE',
+  },
+];
+
+export const ORG_TIER_BY_ID: Record<OrgTierId, OrgTierDef> = Object.fromEntries(
+  ORG_TIERS.map((t) => [t.id, t]),
+) as Record<OrgTierId, OrgTierDef>;
+
+/** Derive the tier for a current memberCount. Returns the smallest sufficient tier. */
+export function tierForMemberCount(memberCount: number): OrgTierDef {
+  for (const tier of ORG_TIERS) {
+    if (memberCount <= tier.maxMembers) return tier;
+  }
+  // Above 500 members → still treated as Large until enterprise contact-sales path.
+  return ORG_TIERS[ORG_TIERS.length - 1]!;
+}
+
+/** Returns the Stripe price env-key for a given org plan id. */
+export function orgPlanToEnvKey(plan: OrgPlanId): string {
+  const storage = plan.endsWith('_storage');
+  const tierId = plan.replace('org_', '').replace('_storage', '') as OrgTierId;
+  const tier = ORG_TIER_BY_ID[tierId];
+  return storage ? tier.stripeStoragePriceEnvKey : tier.stripePriceEnvKey;
+}
+
+// ---------------------------------------------------------------------------
+// RBAC — must stay in sync with backend/src/app/rbac.py
+// ---------------------------------------------------------------------------
+
+/** Permission matrix; the source of truth lives in rbac.py. */
+export const ORG_ROLE_PERMISSIONS: Record<OrgRole, OrgPermission[]> = {
+  owner: [
+    'org:update',
+    'org:delete',
+    'billing:manage',
+    'members:invite',
+    'members:remove',
+    'members:role',
+    'channels:create',
+    'channels:moderate',
+    'messages:post',
+    'messages:read',
+    'messages:pin',
+    'clock:self',
+    'clock:approve',
+    'clock:view_all',
+    'reports:generate',
+    'reports:view',
+    'audit:view',
+  ],
+  admin: [
+    'org:update',
+    'billing:manage',
+    'members:invite',
+    'members:remove',
+    'members:role',
+    'channels:create',
+    'channels:moderate',
+    'messages:post',
+    'messages:read',
+    'messages:pin',
+    'clock:self',
+    'clock:approve',
+    'clock:view_all',
+    'reports:generate',
+    'reports:view',
+    'audit:view',
+  ],
+  manager: [
+    'members:invite',
+    'channels:create',
+    'channels:moderate',
+    'messages:post',
+    'messages:read',
+    'messages:pin',
+    'clock:self',
+    'clock:approve',
+    'clock:view_all',
+    'reports:generate',
+    'reports:view',
+  ],
+  moderator: [
+    'channels:moderate',
+    'messages:post',
+    'messages:read',
+    'messages:pin',
+    'clock:self',
+    'clock:view_all',
+    'reports:view',
+  ],
+  member: ['messages:post', 'messages:read', 'clock:self'],
+  viewer: ['messages:read', 'clock:view_all', 'reports:view'],
+};
+
+export function roleHas(role: OrgRole, perm: OrgPermission): boolean {
+  return ORG_ROLE_PERMISSIONS[role]?.includes(perm) ?? false;
+}
+
+// ---------------------------------------------------------------------------
+// Award programs (unchanged from v1)
+// ---------------------------------------------------------------------------
+
 export interface AwardProgramDef {
   id: string;
   name: string;
