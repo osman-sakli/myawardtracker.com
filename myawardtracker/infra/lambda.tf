@@ -244,25 +244,25 @@ resource "aws_cloudwatch_log_group" "reports" {
 
 locals {
   lambda_env = {
-    TABLE_NAME                       = aws_dynamodb_table.main.name
-    EVIDENCE_BUCKET                  = aws_s3_bucket.evidence.bucket
-    REPORTS_BUCKET                   = aws_s3_bucket.reports.bucket
-    USER_POOL_ID                     = aws_cognito_user_pool.main.id
-    USER_POOL_CLIENT_ID              = aws_cognito_user_pool_client.web.id
-    STRIPE_SECRET_NAME               = local.stripe_secret_name
-    STRIPE_PRICE_INDIVIDUAL          = var.stripe_price_individual
-    STRIPE_PRICE_ORG_SMALL           = var.stripe_price_org_small
-    STRIPE_PRICE_ORG_MEDIUM          = var.stripe_price_org_medium
-    STRIPE_PRICE_ORG_LARGE           = var.stripe_price_org_large
-    STRIPE_PRICE_ORG_SMALL_STORAGE   = var.stripe_price_org_small_storage
-    STRIPE_PRICE_ORG_MEDIUM_STORAGE  = var.stripe_price_org_medium_storage
-    STRIPE_PRICE_ORG_LARGE_STORAGE   = var.stripe_price_org_large_storage
-    REPORT_FROM_EMAIL                = local.report_from_email
-    SITE_URL                         = "https://${local.domain}"
-    CORS_ORIGIN                      = "https://${local.domain}"
-    WS_API_ENDPOINT                  = "wss://${aws_apigatewayv2_domain_name.ws.domain_name}"
-    POWERTOOLS_LOG_LEVEL             = "INFO"
-    POWERTOOLS_SERVICE_NAME          = "myawardtracker"
+    TABLE_NAME                      = aws_dynamodb_table.main.name
+    EVIDENCE_BUCKET                 = aws_s3_bucket.evidence.bucket
+    REPORTS_BUCKET                  = aws_s3_bucket.reports.bucket
+    USER_POOL_ID                    = aws_cognito_user_pool.main.id
+    USER_POOL_CLIENT_ID             = aws_cognito_user_pool_client.web.id
+    STRIPE_SECRET_NAME              = local.stripe_secret_name
+    STRIPE_PRICE_INDIVIDUAL         = var.stripe_price_individual
+    STRIPE_PRICE_ORG_SMALL          = var.stripe_price_org_small
+    STRIPE_PRICE_ORG_MEDIUM         = var.stripe_price_org_medium
+    STRIPE_PRICE_ORG_LARGE          = var.stripe_price_org_large
+    STRIPE_PRICE_ORG_SMALL_STORAGE  = var.stripe_price_org_small_storage
+    STRIPE_PRICE_ORG_MEDIUM_STORAGE = var.stripe_price_org_medium_storage
+    STRIPE_PRICE_ORG_LARGE_STORAGE  = var.stripe_price_org_large_storage
+    REPORT_FROM_EMAIL               = local.report_from_email
+    SITE_URL                        = "https://${local.domain}"
+    CORS_ORIGIN                     = "https://${local.domain}"
+    WS_API_ENDPOINT                 = "wss://${aws_apigatewayv2_domain_name.ws.domain_name}"
+    POWERTOOLS_LOG_LEVEL            = "INFO"
+    POWERTOOLS_SERVICE_NAME         = "myawardtracker"
   }
 }
 
