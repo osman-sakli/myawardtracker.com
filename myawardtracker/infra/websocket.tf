@@ -44,6 +44,10 @@ resource "aws_apigatewayv2_stage" "ws" {
   name        = "prod"
   auto_deploy = true
 
+  # CloudWatch Logs access logging requires the account-level role; create
+  # that first or AWS returns BadRequestException on CreateStage.
+  depends_on = [aws_api_gateway_account.main]
+
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.ws_access.arn
     format = jsonencode({
