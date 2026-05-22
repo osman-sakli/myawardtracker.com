@@ -34,11 +34,21 @@ logger = Logger(service="myawardtracker-ws")
 _apigw: object | None = None
 
 
-def _apigw_client(domain: str, stage: str):
-    """Lazy-construct the management client; endpoint differs per stage."""
+def _apigw_client(api_id: str, stage: str):
+    """Lazy-construct the management client.
+
+    The endpoint must use the *default* execute-api hostname, not our custom
+    ``ws.<domain>``. With the root-stage mapping on the custom domain, posting
+    to ``https://ws.<domain>/<stage>/@connections/{id}`` ends up rewritten as
+    ``<apiId>/<stage>/POST/<stage>/@connections/{id}`` — the extra ``/<stage>``
+    breaks the IAM ARN match (and posting at all). Use the default endpoint
+    so the resource ARN is plain ``<apiId>/<stage>/POST/@connections/{id}``.
+    """
     global _apigw
     if _apigw is None:
-        endpoint_url = f"https://{domain}/{stage}"
+        endpoint_url = (
+            f"https://{api_id}.execute-api.{config.AWS_REGION}.amazonaws.com/{stage}"
+        )
         _apigw = boto3.client(
             "apigatewaymanagementapi",
             region_name=config.AWS_REGION,
@@ -118,7 +128,7 @@ def _disconnect(event: dict) -> dict:
 
 def _send(event: dict) -> dict:
     connection_id = event["requestContext"]["connectionId"]
-    domain = event["requestContext"]["domainName"]
+    api_id = event["requestContext"]["apiId"]
     stage = event["requestContext"]["stage"]
 
     raw = event.get("body") or "{}"
@@ -158,7 +168,7 @@ def _send(event: dict) -> dict:
     )
 
     # Fan-out.
-    client = _apigw_client(domain, stage)
+    client = _apigw_client(api_id, stage)
     for conn_id in db.list_ws_connections_for_channel(channel_id):
         try:
             client.post_to_connection(
