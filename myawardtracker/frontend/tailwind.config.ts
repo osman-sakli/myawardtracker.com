@@ -43,6 +43,14 @@ const config: Config = {
         accent: {
           DEFAULT: '#0fb5a8',
         },
+        // Extra accent tones used by the marketing pages to break the
+        // single-brand-color monotony of the dashboard chrome.
+        teal: '#0fb5a8',
+        coral: '#fb7185',
+        sun: '#f59e0b',
+        violet: '#8b5cf6',
+        mint: '#34d399',
+        sky: '#38bdf8',
         success: '#10b981',
         warning: '#f59e0b',
         danger: '#ef4444',
@@ -61,6 +69,15 @@ const config: Config = {
       backgroundImage: {
         'grid-fade':
           'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(59,109,240,0.12), transparent 70%)',
+        // Marketing-page hero glow: soft blue → teal → coral aurora.
+        'aurora':
+          'radial-gradient(ellipse 80% 50% at 20% 30%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse 70% 55% at 80% 20%, rgba(15,181,168,0.18), transparent 60%), radial-gradient(ellipse 60% 45% at 50% 90%, rgba(251,113,133,0.14), transparent 60%)',
+        'brand-mint':
+          'linear-gradient(135deg, #3b6df0 0%, #0fb5a8 100%)',
+        'sunset':
+          'linear-gradient(135deg, #fb7185 0%, #f59e0b 100%)',
+        'lavender':
+          'linear-gradient(135deg, #8b5cf6 0%, #38bdf8 100%)',
       },
       keyframes: {
         'fade-up': {

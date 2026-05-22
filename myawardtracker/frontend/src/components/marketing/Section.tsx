@@ -2,10 +2,38 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
 
-export function Eyebrow({ children }: { children: ReactNode }) {
+export type EyebrowTone = 'brand' | 'teal' | 'coral' | 'sun' | 'violet' | 'mint';
+
+const TONE_CLASSES: Record<EyebrowTone, { text: string; dot: string; bg: string }> = {
+  brand: {
+    text: 'text-brand',
+    dot: 'bg-brand',
+    bg: 'bg-brand/5 border-brand/25',
+  },
+  teal: { text: 'text-teal', dot: 'bg-teal', bg: 'bg-teal/8 border-teal/25' },
+  coral: { text: 'text-coral', dot: 'bg-coral', bg: 'bg-coral/8 border-coral/25' },
+  sun: { text: 'text-sun', dot: 'bg-sun', bg: 'bg-sun/10 border-sun/30' },
+  violet: { text: 'text-violet', dot: 'bg-violet', bg: 'bg-violet/8 border-violet/25' },
+  mint: { text: 'text-mint', dot: 'bg-mint', bg: 'bg-mint/10 border-mint/30' },
+};
+
+export function Eyebrow({
+  children,
+  tone = 'brand',
+}: {
+  children: ReactNode;
+  tone?: EyebrowTone;
+}) {
+  const t = TONE_CLASSES[tone];
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-brand-soft">
-      <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+    <span
+      className={cn(
+        'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium',
+        t.bg,
+        t.text,
+      )}
+    >
+      <span className={cn('h-1.5 w-1.5 rounded-full', t.dot)} />
       {children}
     </span>
   );
@@ -13,6 +41,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 
 interface SectionHeadingProps {
   eyebrow?: string;
+  eyebrowTone?: EyebrowTone;
   title: ReactNode;
   description?: ReactNode;
   align?: 'center' | 'left';
@@ -21,6 +50,7 @@ interface SectionHeadingProps {
 
 export function SectionHeading({
   eyebrow,
+  eyebrowTone = 'brand',
   title,
   description,
   align = 'center',
@@ -34,7 +64,7 @@ export function SectionHeading({
         className,
       )}
     >
-      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+      {eyebrow && <Eyebrow tone={eyebrowTone}>{eyebrow}</Eyebrow>}
       <h2
         className={cn(
           'text-3xl font-semibold tracking-tight text-content sm:text-[2.5rem] sm:leading-[1.1]',
